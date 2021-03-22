@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <link rel="stylesheet" href="css/todolist.css" />
+    <script src="js/jquery-3.2.1.min.js"></script>
+</head>
+
+<body>
+<header>
+    <section>
+        <label for="title">ToDoList</label>
+        <input type="text" id="title" name="title" placeholder="添加ToDo" required="required" autocomplete="off" />
+    </section>
+</header>
+<section>
+    <h2>正在进行 <span id="todocount">1</span></h2>
+    <ol id="todolist" class="demo-box">
+
+    </ol>
+    <h2>已经完成 <span id="donecount">1</span></h2>
+    <ul id="donelist">
+
+    </ul>
+</section>
+<footer>
+    Copyright &copy; 2014 todolist.cn
+</footer>
+
+<script>
+    $(function(){
+        load();
+        //alert(11)
+        //刷新页面不会丢失数据，需要用到本地存储localStorage
+        //存储数据格式：var todolist = [{title:"xx",done:false}]
+        //注意：本地存储只能存储字符串格式，因此需要把对象转化为字符串JSON.stringify(date)
+        //获取本地存储的数据，需要把里面的字符串转换为对象格式：JSON.parse()
+
+        //1.按下回车键把数据添加到本地存储
+        //利用事件对象keyCode判断用户按下回车键（13）
+        //声明一个数组保存数据
+        //先读取本地储存原来的数据（声明函数getDate()）放到这个数组里面
+        //之后把从表单获取过来的最新数据，追加到数组里面
+        //最后把数组存储到本地（声明函数savaDate()）
+        $("#title").on("keydown",function(event){
+            if(event.keyCode === 13){
+                if ($(this).val() === "") {
+                    alert("请输入内容")
+                } else{
+                    //先读取本地存储原来的数据
+                    var local = getDate();
+                    //把local数组进行数据更新，把最新的数据追加给local数组
+                    local.push({title: $(this).val(),done:false});
+                    //把这个数组local存储到本地存储
+                    saveDate(local);
+
+                    //本地存储渲染到页面
+                    load();
+                    $(this).val("");
+                }
+            }
+        });
+
+        //读取本地存储数据
+        function getDate(){
+            var data = localStorage.getItem("todolist");
+            if(data !== null){
+                //需要把里面的字符串转换为对象格式：JSON.parse()
+                return JSON.parse(data);
+            }else{
+                return [];
+            }
+        };
+
+        //保存本地存储数据
+        function saveDate(data){
+            localStorage.setItem("todolist", JSON.stringify(data))
+        };
+
+        //渲染加载数据
+        function load(){
+            var data = getDate();
+            //console.log(data);
+            //遍历之前要先清空ol里面的元素
+            $("ol , ul").empty();
+            var todoCount = 0; // 正在进行的个数
+            var doneCount = 0; // 已经完成的个数
+            //遍历这个数据
+            $.each(data,function(i,n){
+                //console.log(n)
+                if (n.done) {
+                    $("ul").prepend("<li><input type='checkbox' checked='checked'/><p>"+n.title+"</p><a id="+i+"></a></li>");
+                    doneCount++;
+                } else{
+                    $("ol").prepend("<li><input type='checkbox'/><p>"+n.title+"</p><a id="+i+"></a></li>");
+                    todoCount++;
+                }
+            })
+            $("#todocount").text(todoCount);
+            $("#donecount").text(doneCount);
+        };
+
+        //删除操作
+        //点击里面的a链接，不是删除li，而是删除本地存储对应的数据
+        //核心原理：先获取本地存储数据，删除对应的数据，保存给本地存储，重新渲染li列表
+        //给链接自定义属性记录当前的索引号
+        //根据这个索引号删除对应的数据，利用数组的splice(i,1)方法
+        //存储修改后的数据，然后存储到本地
+        //从新渲染li列表
+        //a是动态创建的，用on绑定事件
+        $("ol ,ul").on("click","a",function(){
+            //先获取本地数据
+            var data = getDate();
+            //修改数据
+            var index = $(this).attr("id");
+            data.splice(index,1);
+            //保存到本地存储
+            saveDate(data);
+            //重新渲染页面
+            load();
+        });
+
+        //正在进行和已完成操作
+        //点击小的复选框，修改本地存储数据，再重新渲染数据列表
+        //点击之后，获取本地存储数据
+        //修改对应属性done为复选框checked状态
+        //之后保存数据到本地
+        //重新渲染加载数据列表
+        //load加载函数里面新增一个条件，如果当前数据 的done为true就是已经完成的，
+        //就把渲染列表加载到ul里面，如果当前数据的done为false，则是代办事项，就把
+        //渲染列表加载到ol里面
+        $("ol , ul").on("click","input",function(){
+            //alert(11)
+            //先获取本地存储数据
+            var data = getDate();
+            //修改数据
+            var index = $(this).siblings("a").attr("id");
+            console.log(index);
+            data[index].done = $(this).prop("checked");
+            console.log(data);
+            //保存数据到本地
+            saveDate(data);
+            //重新加载页面
+            load();
+        });
+    })
+</script>
+</body>
+
+</html>
